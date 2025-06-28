@@ -30,11 +30,19 @@ header {
     z-index: 1000;
 }
 
+h1 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 3em;
+    margin: 0;
+    text-shadow: 4px 4px var(--accent-color-2);
+    letter-spacing: 5px;
+}
+
 .content-area {
     display: flex;
     flex: 1; /* Take remaining vertical space */
     width: 100%;
-    padding-top: 120px; /* Space for fixed header */
+    /* Removed padding-top: 120px; */
     box-sizing: border-box; /* Include padding in width/height */
 }
 
@@ -51,6 +59,46 @@ nav {
     overflow-y: auto;
 }
 
+nav h2 {
+    font-family: 'Press Start 2P', cursive;
+    color: var(--accent-color-1);
+    font-size: 1.5em;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px var(--accent-color-2);
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+}
+
+nav li {
+    margin-bottom: 10px;
+}
+
+nav a {
+    display: block;
+    padding: 15px 10px;
+    background-color: #3a3a3a;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1.2em;
+    border: 2px solid var(--border-color);
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+    box-shadow: 3px 3px 0 var(--accent-color-2);
+}
+
+nav a:hover {
+    background-color: var(--accent-color-1);
+    color: var(--bg-color);
+    border-color: var(--accent-color-2);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--accent-color-2);
+}
+
 main {
     flex: 1;
     padding: 20px;
@@ -60,10 +108,22 @@ main {
     overflow-y: auto;
 }
 
+main h2 {
+    font-family: 'Press Start 2P', cursive;
+    color: var(--accent-color-2);
+    font-size: 2em;
+    margin-top: 0;
+    text-shadow: 2px 2px var(--accent-color-1);
+}
+
+p {
+    line-height: 1.6;
+}
+
 @media (max-width: 768px) {
     .content-area {
         flex-direction: column;
-        padding-top: 0; /* No need for padding-top on small screens */
+        /* Removed padding-top: 0; */
     }
 
     nav {
