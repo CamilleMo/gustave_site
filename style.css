@@ -105,7 +105,7 @@ nav a:hover {
 main {
     flex: 1;
     padding: 20px;
-    margin-left: 250px; /* Space for fixed nav */
+    margin-left: 293px; /* Space for fixed nav (250px width + 2*20px padding + 3px border) */
     background-color: #222;
     border-left: 3px solid var(--accent-color-2);
     box-shadow: -5px 0 15px rgba(255, 0, 255, 0.2);
