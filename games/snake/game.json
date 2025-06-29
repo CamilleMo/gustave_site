@@ -1,0 +1,9 @@
+{
+  "name": "Snake",
+  "description": "Classic snake game with retro styling",
+  "author": "Gustave",
+  "version": "1.0.0",
+  "entry": "game.html",
+  "icon": "🐍",
+  "category": "arcade"
+}
