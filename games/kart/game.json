@@ -1,0 +1,9 @@
+{
+  "name": "Course de Karts",
+  "description": "Jeu de course de karts en 3D avec Three.js",
+  "author": "Gustave",
+  "version": "1.0.0",
+  "entry": "game.html",
+  "icon": "🏎️",
+  "category": "racing"
+}

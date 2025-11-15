@@ -26,7 +26,7 @@ class GameLoader {
     async getGameDirectories() {
         // In a real filesystem, this would scan the games directory
         // For now, we'll return known games
-        return ['snake'];
+        return ['snake', 'kart'];
     }
 
     // Load a single game's configuration
@@ -75,7 +75,7 @@ class GameLoader {
         });
 
         // Add coming soon placeholders
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 1; i++) {
             const li = document.createElement('li');
             const a = document.createElement('a');
             a.href = '#';
