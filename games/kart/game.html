@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course de Karts Simple</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #speedometer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 18px;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="speedometer">Vitesse: 0 km/h</div>
+    <div id="instructions">
+        Flèches/ZQSD: Conduire<br>
+        Espace: Accélérer<br>
+        F: Changer de vue
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Variables globales
+        let scene, camera, renderer;
+        let kart, track, ground;
+        let isMovingForward = false;
+        let isMovingBackward = false;
+        let isMovingLeft = false;
+        let isMovingRight = false;
+        let isBoosting = false;
+        let speed = 0;
+        let maxSpeed = 0.5;
+        let boostSpeed = 0.8;
+        let acceleration = 0.01;
+        let deceleration = 0.005;
+        let turnSpeed = 0.03;
+        let isThirdPerson = true;
+
+        // Initialisation
+        init();
+        animate();
+
+        function init() {
+            // Créer la scène
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Ciel bleu
+
+            // Créer la caméra
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            // Créer le renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Ajouter de la lumière
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(50, 100, 50);
+            sunLight.castShadow = true;
+            scene.add(sunLight);
+
+            // Créer le sol
+            createGround();
+
+            // Créer la piste
+            createTrack();
+
+            // Créer le kart
+            createKart();
+
+            // Gestion des événements
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+        }
+
+        function createGround() {
+            // Créer le sol (herbe)
+            const groundGeometry = new THREE.PlaneGeometry(300, 300);
+            const groundMaterial = new THREE.MeshStandardMaterial({
+                color: 0x7CFC00,
+                roughness: 0.8
+            });
+            ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+        }
+
+        function createTrack() {
+            // Créer la piste de course (forme ovale simple)
+            const trackShape = new THREE.Shape();
+
+            // Points définissant la forme extérieure de la piste
+            trackShape.moveTo(0, -40);
+            trackShape.bezierCurveTo(50, -40, 50, 40, 0, 40);
+            trackShape.bezierCurveTo(-50, 40, -50, -40, 0, -40);
+
+            // Forme intérieure (pour créer un anneau)
+            const holeShape = new THREE.Shape();
+            holeShape.moveTo(0, -20);
+            holeShape.bezierCurveTo(25, -20, 25, 20, 0, 20);
+            holeShape.bezierCurveTo(-25, 20, -25, -20, 0, -20);
+            trackShape.holes.push(holeShape);
+
+            // Créer la géométrie de la piste
+            const trackGeometry = new THREE.ShapeGeometry(trackShape);
+            const trackMaterial = new THREE.MeshStandardMaterial({
+                color: 0x333333,
+                roughness: 0.9
+            });
+            track = new THREE.Mesh(trackGeometry, trackMaterial);
+            track.rotation.x = -Math.PI / 2;
+            track.position.y = 0.01; // Légèrement au-dessus du sol
+            track.receiveShadow = true;
+            scene.add(track);
+
+            // Ajouter des lignes de marquage
+            const startLineGeometry = new THREE.BoxGeometry(20, 0.05, 2);
+            const startLineMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+            const startLine = new THREE.Mesh(startLineGeometry, startLineMaterial);
+            startLine.position.set(0, 0.02, -40);
+            startLine.receiveShadow = true;
+            scene.add(startLine);
+
+            // Ajouter quelques décorations autour de la piste
+            addTrackDecorations();
+        }
+
+        function addTrackDecorations() {
+            // Arbres
+            for (let i = 0; i < 20; i++) {
+                const treeHeight = 5 + Math.random() * 5;
+
+                // Tronc
+                const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, treeHeight/2, 8);
+                const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+
+                // Feuillage
+                const leavesGeometry = new THREE.ConeGeometry(2, treeHeight/2, 8);
+                const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                leaves.position.y = treeHeight/2;
+
+                // Groupe pour l'arbre
+                const tree = new THREE.Group();
+                tree.add(trunk);
+                tree.add(leaves);
+
+                // Position aléatoire autour de la piste
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 60 + Math.random() * 20;
+                tree.position.set(
+                    Math.cos(angle) * radius,
+                    treeHeight/4,
+                    Math.sin(angle) * radius
+                );
+
+                tree.castShadow = true;
+                scene.add(tree);
+            }
+
+            // Tribune
+            const standGeometry = new THREE.BoxGeometry(30, 10, 10);
+            const standMaterial = new THREE.MeshStandardMaterial({ color: 0x555555 });
+            const stand = new THREE.Mesh(standGeometry, standMaterial);
+            stand.position.set(0, 5, -50);
+            stand.castShadow = true;
+            scene.add(stand);
+        }
+
+        function createKart() {
+            // Créer le kart (groupe d'objets)
+            kart = new THREE.Group();
+
+            // Châssis principal (rouge)
+            const bodyGeometry = new THREE.BoxGeometry(2, 0.5, 3);
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFF0000,
+                metalness: 0.5,
+                roughness: 0.5
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.5;
+            body.castShadow = true;
+            kart.add(body);
+
+            // Habitacle (noir)
+            const cockpitGeometry = new THREE.BoxGeometry(1, 0.5, 1);
+            const cockpitMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+            cockpit.position.set(0, 0.75, 0);
+            cockpit.castShadow = true;
+            kart.add(cockpit);
+
+            // Roues
+            const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+            const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+            // Roue avant gauche
+            const wheelFL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelFL.position.set(-1, 0.4, 1);
+            wheelFL.rotation.z = Math.PI / 2;
+            wheelFL.castShadow = true;
+            kart.add(wheelFL);
+
+            // Roue avant droite
+            const wheelFR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelFR.position.set(1, 0.4, 1);
+            wheelFR.rotation.z = Math.PI / 2;
+            wheelFR.castShadow = true;
+            kart.add(wheelFR);
+
+            // Roue arrière gauche
+            const wheelBL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelBL.position.set(-1, 0.4, -1);
+            wheelBL.rotation.z = Math.PI / 2;
+            wheelBL.castShadow = true;
+            kart.add(wheelBL);
+
+            // Roue arrière droite
+            const wheelBR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelBR.position.set(1, 0.4, -1);
+            wheelBR.rotation.z = Math.PI / 2;
+            wheelBR.castShadow = true;
+            kart.add(wheelBR);
+
+            // Pilote simple
+            const driverHeadGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const driverMaterial = new THREE.MeshStandardMaterial({ color: 0xFFCC99 });
+            const driverHead = new THREE.Mesh(driverHeadGeometry, driverMaterial);
+            driverHead.position.set(0, 1.3, 0);
+            driverHead.castShadow = true;
+            kart.add(driverHead);
+
+            // Position de départ
+            kart.position.set(0, 0, -35);
+            kart.rotation.y = 0;
+            scene.add(kart);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(event) {
+            switch (event.code) {
+                case 'ArrowUp':
+                case 'KeyW':
+                case 'KeyZ':
+                    isMovingForward = true;
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    isMovingBackward = true;
+                    break;
+                case 'ArrowLeft':
+                case 'KeyA':
+                case 'KeyQ':
+                    isMovingLeft = true;
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    isMovingRight = true;
+                    break;
+                case 'Space':
+                    isBoosting = true;
+                    break;
+                case 'KeyF':
+                    // Changer de vue (première/troisième personne)
+                    isThirdPerson = !isThirdPerson;
+                    break;
+            }
+        }
+
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'ArrowUp':
+                case 'KeyW':
+                case 'KeyZ':
+                    isMovingForward = false;
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    isMovingBackward = false;
+                    break;
+                case 'ArrowLeft':
+                case 'KeyA':
+                case 'KeyQ':
+                    isMovingLeft = false;
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    isMovingRight = false;
+                    break;
+                case 'Space':
+                    isBoosting = false;
+                    break;
+            }
+        }
+
+        function updateKart() {
+            // Accélération/décélération
+            if (isMovingForward) {
+                speed += acceleration;
+            } else if (isMovingBackward) {
+                speed -= acceleration;
+            } else {
+                // Décélération naturelle
+                if (speed > 0) {
+                    speed -= deceleration;
+                } else if (speed < 0) {
+                    speed += deceleration;
+                }
+
+                // Éviter les valeurs trop petites
+                if (Math.abs(speed) < 0.01) {
+                    speed = 0;
+                }
+            }
+
+            // Appliquer le boost
+            const currentMaxSpeed = isBoosting ? boostSpeed : maxSpeed;
+
+            // Limiter la vitesse
+            speed = Math.max(-currentMaxSpeed/2, Math.min(currentMaxSpeed, speed));
+
+            // Tourner le kart
+            if (isMovingLeft) {
+                kart.rotation.y += turnSpeed * (speed !== 0 ? 1 : 0);
+            }
+            if (isMovingRight) {
+                kart.rotation.y -= turnSpeed * (speed !== 0 ? 1 : 0);
+            }
+
+            // Déplacer le kart
+            kart.position.x += Math.sin(kart.rotation.y) * speed;
+            kart.position.z += Math.cos(kart.rotation.y) * speed;
+
+            // Mise à jour de l'affichage de la vitesse
+            document.getElementById('speedometer').textContent = 'Vitesse: ' + Math.abs(Math.round(speed * 100)) + ' km/h';
+
+            // Animer les roues en fonction de la vitesse
+            const wheelRotationSpeed = speed * 10;
+            kart.children.forEach((child, index) => {
+                // Les indices 2, 3, 4, 5 sont les roues
+                if (index >= 2 && index <= 5) {
+                    child.rotation.x += wheelRotationSpeed;
+                }
+            });
+        }
+
+        function updateCamera() {
+            if (isThirdPerson) {
+                // Vue à la troisième personne (derrière le kart)
+                const cameraOffset = new THREE.Vector3(0, 4, 8);
+                cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), kart.rotation.y);
+
+                camera.position.copy(kart.position).add(cameraOffset);
+                camera.lookAt(kart.position);
+            } else {
+                // Vue à la première personne (depuis le kart)
+                const cameraOffset = new THREE.Vector3(0, 1.5, 0);
+                cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), kart.rotation.y);
+
+                camera.position.copy(kart.position).add(cameraOffset);
+
+                const lookAtOffset = new THREE.Vector3(0, 1.5, -5);
+                lookAtOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), kart.rotation.y);
+                camera.lookAt(kart.position.clone().add(lookAtOffset));
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Mettre à jour le kart
+            updateKart();
+
+            // Mettre à jour la caméra
+            updateCamera();
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
