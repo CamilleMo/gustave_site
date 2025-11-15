@@ -273,6 +273,11 @@
         }
 
         function onKeyDown(event) {
+            // Empêcher le scroll de la page avec les flèches et la barre d'espace
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) {
+                event.preventDefault();
+            }
+
             switch (event.code) {
                 case 'ArrowUp':
                 case 'KeyW':
@@ -303,6 +308,11 @@
         }
 
         function onKeyUp(event) {
+            // Empêcher le scroll de la page avec les flèches et la barre d'espace
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) {
+                event.preventDefault();
+            }
+
             switch (event.code) {
                 case 'ArrowUp':
                 case 'KeyW':
